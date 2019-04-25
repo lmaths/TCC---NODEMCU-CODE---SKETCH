@@ -8,7 +8,7 @@ LiquidCrystal lcd(16,5,4,0,2,14);
 #define FIREBASE_HOST "nodemcu-8c8b9.firebaseio.com"
 #define FIREBASE_AUTH "NCto0QZk7wkMgd0mdhZKTCHihHFNqEcxd1Ra1M6f"
 #define WIFI_SSID "matheuslima"
-#define WIFI_PASSWORD "M@theus123000"
+#define WIFI_PASSWORD ""
 
 
 
