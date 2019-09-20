@@ -33,12 +33,45 @@ LiquidCrystal_I2C lcd(0x27, totalColumns, totalRows);
 char daysOfTheWeek[7][12] = {"Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"};
 
 
+int sensorPoteAgua = 2;
+int sensorReservatorioUm = 4;
+int sensorReservatorioDois = 5;
 
 
+
+void encherPoteAgua(){
+
+  boolean estado = digitalRead(sensorPoteAgua);
+  Serial.println("Estado Sensor");
+  Serial.println(estado);
+
+  if(estado == false) {
+    
+   digitalWrite(releMotor, LOW);
+   delay(3000);
+    digitalWrite(releMotor, HIGH);
+  
+
+  } else {
+     digitalWrite(releMotor, HIGH);
+  }
+ 
+ 
+
+  Firebase.set("/estadoPote", estado);
+
+  
+  
+}
+  
 
 void setup() {
   pinMode(releMotor, OUTPUT); 
   digitalWrite(releMotor, HIGH);
+  pinMode(sensorPoteAgua, INPUT);
+  pinMode(sensorReservatorioUm, INPUT);
+   pinMode(sensorReservatorioDois, INPUT);
+  
 
     demosComida1 = 0;
     demosComida2 = 0;
@@ -48,7 +81,7 @@ void setup() {
    lcd.backlight(); 
    
 
-  delay(3000); 
+ 
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
     while (1);
@@ -57,10 +90,10 @@ void setup() {
   if (rtc.lostPower()) {
     Serial.println("RTC lost power, lets set the time!");
     // following line sets the RTC to the date & time this sketch was compiled
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
-   rtc.adjust(DateTime(2019, 8, 30, 17, 25                    , 0));
+  // rtc.adjust(DateTime(2019, 9, 01, 10, 27, 0));
   }
 
   
@@ -71,11 +104,6 @@ void setup() {
     Serial.print(".");  
     delay(500);
   }
-  Serial.println();
-  Serial.print("connected: ");    
-  Serial.println(WiFi.localIP());
-
-delay (3000);
 
 
   Serial.print("iniciando firebase");
@@ -87,61 +115,82 @@ delay (3000);
 
 void loop() {
 
-   
+   encherPoteAgua();
+
   
    DateTime now = rtc.now();
 
    int horaAtual = now.hour();
    int minutoAtual = now.minute();
    
-    delay(3000);
- //int quantidadeAlimentacao = Firebase.getInt("qntAlimentar");
 
- int horaAlimentacao1 = Firebase.getInt("/horaAlimentacao");
- int minutoAlimentacao1 = Firebase.getInt("/minutoAlimentacao");
- int horaAlimentacao2 = Firebase.getInt("/horaAlimentacaoDois");
- int minutoAlimentacao2 = Firebase.getInt("/minutoAlimentacaoDois");
+ int horaAlimentacao1 = Firebase.getInt("/horaAlimentacao1");
+ int minutoAlimentacao1 = Firebase.getInt("/minAlimentacao");
+ int horaAlimentacao2 = Firebase.getInt("/horaAlimentacao2");
+ int minutoAlimentacao2 = Firebase.getInt("/minAlimentacao2");
+ bool qtdAlimentacao = Firebase.getBool("/qtdAlim");
 
- Serial.println(horaAlimentacao1);
- Serial.println(minutoAlimentacao1);
- Serial.println(horaAlimentacao2);
- Serial.println(minutoAlimentacao2);
- delay (1000);
-
- //Serial.println(quantidadeAlimentacao);
-  //int horaAlimentacao[quantidadeAlimentacao], minutoAlimentacao[quantidadeAlimentacao], demosComida[quantidadeAlimentacao];
-
- /*int i = 0;
-  while(i < quantidadeAlimentacao) { //setar os horarios e alimentar
-  int teste = Firebase.get("/horarios/");
-   Serial.println(teste);
-    
-    horaAlimentacao[i] = 2;
-    Serial.println(horaAlimentacao[i]);
-    
-    i = i + 1;
-  } */
-   
+ 
+  int estadoSensorBaixo = digitalRead(sensorReservatorioUm);
+  int estadoSensorCima = digitalRead(sensorReservatorioDois);
   
-    if(horaAtual == horaAlimentacao1 && minutoAtual == minutoAlimentacao1 && demosComida1 == 0) {
+  if(estadoSensorBaixo == 0 && estadoSensorCima == 1) {
+    Firebase.setInt("/reservatorio", 0);
+  } else if (estadoSensorBaixo == 1 && estadoSensorCima == 1) {
+    Firebase.setInt("/reservatorio", 1);
+  } else if (estadoSensorBaixo == 1 && estadoSensorCima == 0) {
+    Firebase.setInt("/reservatorio", 2);
+  }
 
-      digitalWrite(releMotor, LOW);
-      delay(20000);
-      digitalWrite(releMotor, HIGH);
+  Serial.println(estadoSensorBaixo);
+   Serial.println(estadoSensorCima);
+ 
+ 
+
+ if(horaAtual == horaAlimentacao1 && minutoAtual == minutoAlimentacao1 && demosComida1 == 0) {
+     /* digitalWrite(releMotor, LOW);
+      delay(100000);
+      digitalWrite(releMotor, HIGH); 
+      
+      passar outro rele*/
 
       demosComida1 = 1;
     Serial.print("alimentou");
   
    }
 
-   if(horaAtual == horaAlimentacao2 && minutoAtual == minutoAlimentacao2 && demosComida2 == 0) {
-      digitalWrite(releMotor, LOW);
-      delay(20000);
+   if(horaAtual == horaAlimentacao2 && minutoAtual == minutoAlimentacao2 && demosComida2 == 0 && qtdAlimentacao == 1) {
+      /* digitalWrite(releMotor, LOW);
+      delay(100000);
       digitalWrite(releMotor, HIGH);
 
       demosComida2 = 1;
 
        Serial.print("alimentou 2");
+ 
+        passar outro rele*/
+   }
+
+   if(demosComida1 == 0 || demosComida1 == 1 && qtdAlimentacao == 0) {
+     lcd.clear();
+     
+      
+      int Hora = (now.hour());
+      int Min = (now.minute());
+      String horario = "Hora: ";
+      String fim = "";
+
+     
+      String prox = "Prox: ";
+      String fimAlimentacao = prox + horaAlimentacao1 + ":" + minutoAlimentacao1;
+      
+        fim = (horario + Hora + ":" + Min);
+        lcd.setCursor(0,0);
+        lcd.print(fim);
+        lcd.setCursor(0,1);
+        lcd.print(fimAlimentacao);
+      
+  
    }
 
     if (demosComida1 == 0 || demosComida1 == 1 && demosComida2 == 1 ){
@@ -163,22 +212,9 @@ void loop() {
         lcd.setCursor(0,1);
         lcd.print(fimAlimentacao);
       
-  
-     
-   
-  
-  
-    Serial.print("Horário atual: ");
-   
-    Serial.print("Próxima alimentação: ");
-    Serial.print(horaAlimentacao1);
-    Serial.print("h:");
-    Serial.print(minutoAlimentacao1);
-    Serial.println("min");
-    Serial.println("  ");
   }
 
-  if (demosComida1 == 1 && demosComida2 == 0){
+  if (demosComida1 == 1 && demosComida2 == 0 && qtdAlimentacao == 1){
     
     lcd.print("Alimentação: " + horaAlimentacao2 + minutoAlimentacao2);
     
@@ -197,49 +233,15 @@ void loop() {
         lcd.setCursor(0,1);
         lcd.print(fimAlimentacao2);
       
-    
-    Serial.print("Próxima alimentação: ");
-    Serial.print(horaAlimentacao2);
-    Serial.print("h:");
-    Serial.print(minutoAlimentacao2);
-    Serial.println("min");
-    Serial.println("  ");
   }
 
-    
-    Serial.print(now.year(), DEC);
-    Serial.print('/');
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print(" (");
-    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
-    Serial.print(") ");
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    Serial.print(now.minute(), DEC);
-    Serial.print(':');
-    Serial.print(now.second(), DEC);
-    Serial.println();
-
-
-    
-
-
- /* if(horaAtual == 0 && minutoAtual == 0) { //reseta o verificador de alimentação a meia noite 
-    for(byte i = 0; i <= demosComida[i]; i = i +1) {
-      demosComida[i] = 0 ;
-
-      Serial.print (demosComida[i]);
-    }
-  } */
 
   if (horaAtual == 0 && minutoAtual == 0){
     demosComida1 = 0;
     demosComida2 = 0; 
   }
 
-    delay (1000);
+  
 
 
 
