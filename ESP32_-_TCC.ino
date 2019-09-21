@@ -6,6 +6,7 @@
 #include "RTClib.h" //lib para modulo de relogio
 #include <IOXhop_FirebaseESP32.h>
 #include <LiquidCrystal_I2C.h>
+#include <Ultrasonic.h>
 
 
 
@@ -30,47 +31,45 @@ int demosComida1, demosComida2;
 
 LiquidCrystal_I2C lcd(0x27, totalColumns, totalRows);
 
+
 char daysOfTheWeek[7][12] = {"Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"};
 
 
 int sensorPoteAgua = 2;
-int sensorReservatorioUm = 4;
-int sensorReservatorioDois = 5;
+int sensorBaixo = 4;
+int sensorCima = 33;
 
 
 
 void encherPoteAgua(){
 
   boolean estado = digitalRead(sensorPoteAgua);
-  Serial.println("Estado Sensor");
   Serial.println(estado);
-
   if(estado == false) {
-    
-   digitalWrite(releMotor, LOW);
+    Serial.print("enchendo a agua");
+   digitalWrite(releMotor, HIGH);
    delay(3000);
-    digitalWrite(releMotor, HIGH);
+    digitalWrite(releMotor, LOW);
   
 
   } else {
-     digitalWrite(releMotor, HIGH);
+    Serial.println("desliga relé");
+     digitalWrite(releMotor, LOW);
   }
- 
- 
 
-  Firebase.set("/estadoPote", estado);
+  Firebase.set("poteAgua", estado);
 
-  
   
 }
   
 
 void setup() {
   pinMode(releMotor, OUTPUT); 
-  digitalWrite(releMotor, HIGH);
+  digitalWrite(releMotor, LOW);
   pinMode(sensorPoteAgua, INPUT);
-  pinMode(sensorReservatorioUm, INPUT);
-   pinMode(sensorReservatorioDois, INPUT);
+  pinMode(sensorBaixo, INPUT);
+  pinMode(sensorCima, INPUT);
+
   
 
     demosComida1 = 0;
@@ -131,20 +130,20 @@ void loop() {
  bool qtdAlimentacao = Firebase.getBool("/qtdAlim");
 
  
-  int estadoSensorBaixo = digitalRead(sensorReservatorioUm);
-  int estadoSensorCima = digitalRead(sensorReservatorioDois);
   
-  if(estadoSensorBaixo == 0 && estadoSensorCima == 1) {
+  int sensor = digitalRead(sensorBaixo);
+  int segundoSensor = digitalRead(sensorCima);
+
+  if (sensor == 0 && segundoSensor == 0) {
     Firebase.setInt("/reservatorio", 0);
-  } else if (estadoSensorBaixo == 1 && estadoSensorCima == 1) {
+  } else if (sensor == 1 && segundoSensor == 0) {
     Firebase.setInt("/reservatorio", 1);
-  } else if (estadoSensorBaixo == 1 && estadoSensorCima == 0) {
+  }else if(sensor == 1 && segundoSensor == 1) {
     Firebase.setInt("/reservatorio", 2);
   }
 
-  Serial.println(estadoSensorBaixo);
-   Serial.println(estadoSensorCima);
  
+  
  
 
  if(horaAtual == horaAlimentacao1 && minutoAtual == minutoAlimentacao1 && demosComida1 == 0) {
