@@ -1,3 +1,5 @@
+
+
 #include <ArduinoJson.h>
 
 
@@ -17,11 +19,17 @@
 #define WIFI_PASSWORD "M@theus123000"
 #define TRIG_PIN 2
 #define ECHO_PIN 15
+const int portaLDR = 35;
 
 RTC_DS3231 rtc;
 
 int totalColumns = 16;
 int totalRows = 2;
+#define DOUT 14                                              // Pin connected to HX711 data output pin
+#define CLK  12
+
+
+
 
  // passar a quantidade do firebase
 
@@ -64,13 +72,13 @@ void encherPoteAgua(){
   
 
 void setup() {
+ 
   pinMode(releMotor, OUTPUT); 
   digitalWrite(releMotor, LOW);
   pinMode(sensorPoteAgua, INPUT);
   pinMode(sensorBaixo, INPUT);
   pinMode(sensorCima, INPUT);
-
-  
+  pinMode(portaLDR, INPUT);
 
     demosComida1 = 0;
     demosComida2 = 0;
@@ -78,7 +86,6 @@ void setup() {
    Serial.begin(9600);
    lcd.init(); 
    lcd.backlight(); 
-   
 
  
   if (! rtc.begin()) {
@@ -108,11 +115,29 @@ void setup() {
   Serial.print("iniciando firebase");
   
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+
+  
+ 
+
  
 
 }
 
 void loop() {
+  
+ while(true) {
+  int leitura = analogRead(portaLDR);
+  Serial.println(leitura);
+
+
+
+
+  }
+
+
+
+  
+
 
    encherPoteAgua();
 
@@ -121,7 +146,7 @@ void loop() {
 
    int horaAtual = now.hour();
    int minutoAtual = now.minute();
-   
+ 
 
  int horaAlimentacao1 = Firebase.getInt("/horaAlimentacao1");
  int minutoAlimentacao1 = Firebase.getInt("/minAlimentacao");
@@ -147,6 +172,7 @@ void loop() {
  
 
  if(horaAtual == horaAlimentacao1 && minutoAtual == minutoAlimentacao1 && demosComida1 == 0) {
+    
      /* digitalWrite(releMotor, LOW);
       delay(100000);
       digitalWrite(releMotor, HIGH); 
@@ -159,6 +185,7 @@ void loop() {
    }
 
    if(horaAtual == horaAlimentacao2 && minutoAtual == minutoAlimentacao2 && demosComida2 == 0 && qtdAlimentacao == 1) {
+ 
       /* digitalWrite(releMotor, LOW);
       delay(100000);
       digitalWrite(releMotor, HIGH);
@@ -239,6 +266,8 @@ void loop() {
     demosComida1 = 0;
     demosComida2 = 0; 
   }
+
+  
 
   
 
