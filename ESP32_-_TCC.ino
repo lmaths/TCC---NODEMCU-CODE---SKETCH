@@ -31,9 +31,11 @@ int totalRows = 2;
 
 
 
+
  // passar a quantidade do firebase
 
 int releMotor = 15;
+int rele = 5;
 int demosComida1, demosComida2;
 
 
@@ -46,6 +48,7 @@ char daysOfTheWeek[7][12] = {"Domingo", "Segunda", "Terça", "Quarta", "Quinta",
 int sensorPoteAgua = 2;
 int sensorBaixo = 4;
 int sensorCima = 33;
+int leitura;
 
 
 
@@ -57,7 +60,9 @@ void encherPoteAgua(){
     Serial.print("enchendo a agua");
    digitalWrite(releMotor, HIGH);
    delay(3000);
-    digitalWrite(releMotor, LOW);
+   digitalWrite(releMotor, LOW);
+  
+   
   
 
   } else {
@@ -66,6 +71,7 @@ void encherPoteAgua(){
   }
 
   Firebase.set("poteAgua", estado);
+ 
 
   
 }
@@ -73,12 +79,16 @@ void encherPoteAgua(){
 
 void setup() {
  
-  pinMode(releMotor, OUTPUT); 
+  pinMode(releMotor, OUTPUT);
+  pinMode(rele, OUTPUT);
+  digitalWrite(rele, LOW); 
   digitalWrite(releMotor, LOW);
   pinMode(sensorPoteAgua, INPUT);
   pinMode(sensorBaixo, INPUT);
   pinMode(sensorCima, INPUT);
   pinMode(portaLDR, INPUT);
+ 
+ 
 
     demosComida1 = 0;
     demosComida2 = 0;
@@ -115,32 +125,18 @@ void setup() {
   Serial.print("iniciando firebase");
   
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-
-  
  
 
  
 
 }
 
-void loop() {
-  
- while(true) {
-  int leitura = analogRead(portaLDR);
-  Serial.println(leitura);
+void loop() { 
 
-
-
-
-  }
-
-
-
-  
-
+    leitura = analogRead(portaLDR);
+     Serial.println(leitura);
 
    encherPoteAgua();
-
   
    DateTime now = rtc.now();
 
@@ -172,33 +168,50 @@ void loop() {
  
 
  if(horaAtual == horaAlimentacao1 && minutoAtual == minutoAlimentacao1 && demosComida1 == 0) {
-    
-     /* digitalWrite(releMotor, LOW);
-      delay(100000);
-      digitalWrite(releMotor, HIGH); 
-      
-      passar outro rele*/
-
+  delay(2000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Verificando...");
+   delay(1000);
+           while(leitura > 1000) {
+            lcd.setCursor(0,1);
+            lcd.print("Alimentando :)");
+            digitalWrite(rele, HIGH);
+            leitura = analogRead(portaLDR);
+           }
+         lcd.setCursor(0,1);
+         lcd.print("Pote cheio :(");
+         digitalWrite(rele, LOW);
       demosComida1 = 1;
-    Serial.print("alimentou");
-  
+
+      delay(2000);
+      lcd.clear();
    }
 
    if(horaAtual == horaAlimentacao2 && minutoAtual == minutoAlimentacao2 && demosComida2 == 0 && qtdAlimentacao == 1) {
- 
-      /* digitalWrite(releMotor, LOW);
-      delay(100000);
-      digitalWrite(releMotor, HIGH);
-
+      delay(2000);
+      Serial.println(leitura);
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Verificando...");
+      while(leitura > 1000) {
+        lcd.setCursor(0,1);
+        lcd.print("Alimentando...");
+        digitalWrite(rele, HIGH);
+        leitura = analogRead(portaLDR);
+      }
+          lcd.setCursor(0,1);
+          lcd.print("Pote cheio");
+      digitalWrite(rele, LOW);
       demosComida2 = 1;
-
-       Serial.print("alimentou 2");
+    delay(2000);
+    lcd.clear();
  
-        passar outro rele*/
+        
    }
 
    if(demosComida1 == 0 || demosComida1 == 1 && qtdAlimentacao == 0) {
-     lcd.clear();
+    
      
       
       int Hora = (now.hour());
@@ -211,6 +224,7 @@ void loop() {
       String fimAlimentacao = prox + horaAlimentacao1 + ":" + minutoAlimentacao1;
       
         fim = (horario + Hora + ":" + Min);
+         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print(fim);
         lcd.setCursor(0,1);
@@ -220,8 +234,6 @@ void loop() {
    }
 
     if (demosComida1 == 0 || demosComida1 == 1 && demosComida2 == 1 ){
-      lcd.clear();
-     
       
       int Hora = (now.hour());
       int Min = (now.minute());
@@ -233,6 +245,7 @@ void loop() {
       String fimAlimentacao = prox + horaAlimentacao1 + ":" + minutoAlimentacao1;
       
         fim = (horario + Hora + ":" + Min);
+        lcd.clear();
         lcd.setCursor(0,0);
         lcd.print(fim);
         lcd.setCursor(0,1);
@@ -241,7 +254,7 @@ void loop() {
   }
 
   if (demosComida1 == 1 && demosComida2 == 0 && qtdAlimentacao == 1){
-    
+    lcd.clear();
     lcd.print("Alimentação: " + horaAlimentacao2 + minutoAlimentacao2);
     
     int Hora2 = (now.hour());
@@ -266,6 +279,7 @@ void loop() {
     demosComida1 = 0;
     demosComida2 = 0; 
   }
+
 
   
 
