@@ -56,23 +56,14 @@ void encherPoteAgua(){
 
   boolean estado = digitalRead(sensorPoteAgua);
   Serial.println(estado);
-  if(estado == false) {
+  while(estado == false) {
     Serial.print("enchendo a agua");
-   digitalWrite(releMotor, HIGH);
-   delay(3000);
-   digitalWrite(releMotor, LOW);
-  
-   
-  
-
-  } else {
+    digitalWrite(releMotor, HIGH);
+    estado = digitalRead(sensorPoteAgua);
+  } 
     Serial.println("desliga relé");
      digitalWrite(releMotor, LOW);
-  }
-
   Firebase.set("poteAgua", estado);
- 
-
   
 }
   
@@ -133,8 +124,7 @@ void setup() {
 
 void loop() { 
 
-    leitura = analogRead(portaLDR);
-     Serial.println(leitura);
+    
 
    encherPoteAgua();
   
@@ -169,15 +159,20 @@ void loop() {
 
  if(horaAtual == horaAlimentacao1 && minutoAtual == minutoAlimentacao1 && demosComida1 == 0) {
   delay(2000);
+     leitura = analogRead(portaLDR);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Verificando...");
-   delay(1000);
-           while(leitura > 1000) {
+   delay(5000);
+           while(leitura > 3000) {
             lcd.setCursor(0,1);
             lcd.print("Alimentando :)");
             digitalWrite(rele, HIGH);
+            delay(12000);
+            digitalWrite(rele, LOW);
+            delay(5000);
             leitura = analogRead(portaLDR);
+           
            }
          lcd.setCursor(0,1);
          lcd.print("Pote cheio :(");
@@ -190,15 +185,21 @@ void loop() {
 
    if(horaAtual == horaAlimentacao2 && minutoAtual == minutoAlimentacao2 && demosComida2 == 0 && qtdAlimentacao == 1) {
       delay(2000);
+       leitura = analogRead(portaLDR);
       Serial.println(leitura);
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Verificando...");
-      while(leitura > 1000) {
+       delay(5000);
+      while(leitura > 3000) {
         lcd.setCursor(0,1);
-        lcd.print("Alimentando...");
+        lcd.print("Alimentando :)");
         digitalWrite(rele, HIGH);
+        delay(12000);
+        digitalWrite(rele, LOW);
+        delay(5000);
         leitura = analogRead(portaLDR);
+ 
       }
           lcd.setCursor(0,1);
           lcd.print("Pote cheio");
